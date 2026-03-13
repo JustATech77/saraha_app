@@ -6,13 +6,13 @@ const userSchema = new mongoose.Schema(
   {
     firstName: {
       type: String,
-      // required: true,
+      required: true,
       minlength: [3, "First name must be at least 3 characters long"],
       maxlength: [50, "First name must be less than 50 characters"],
     },
     lastName: {
       type: String,
-      // required: true,
+      required: true,
       minlength: [3, "Last name must be at least 3 characters long"],
       maxlength: [50, "Last name must be less than 50 characters"],
     },
@@ -57,7 +57,16 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    changePasswordAt: { type: Date },
+
+    deletedAt: { type: Date },
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    restoredAt: { type: Date },
+    restoredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    forgetPassOTP: { type: String },
+    changeCredentialsTime: { type: Date },
   },
+
   {
     timestamps: true,
     toJSON: { virtuals: true },
@@ -67,7 +76,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema
-  .virtual("fullName") 
+  .virtual("fullName")
   .set(function (value) {
     const [firstName, lastName] = value?.split(" ") || [];
     this.set({ firstName, lastName });

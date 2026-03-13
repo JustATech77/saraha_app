@@ -3,15 +3,18 @@ import { decodeToken, tokenTypeEnum } from "../utils/security/token.js";
 
 export const authentication = ({ tokenType = tokenTypeEnum.access } = {}) => {
   return asyncHandler(async (req, res, next) => {
-    const user = await decodeToken({
-      next,
-      authorization: req.headers.authorization,
-      tokenType,
-    });
-    if (user) {
-      req.user = user;
-      return next();
+    const { user, decoded } =
+      (await decodeToken({
+        next,
+        authorization: req.headers.authorization,
+        tokenType,
+      })) || {};
+    if (!user) {
+      return;
     }
+    req.user = user;
+    req.decoded = decoded;
+    return next();
   });
 };
 
@@ -30,14 +33,19 @@ export const auth = ({
   accessRoles = [],
 } = {}) => {
   return asyncHandler(async (req, res, next) => {
-    const user = await decodeToken({
-      next,
-      authorization: req.headers.authorization,
-      tokenType,
-    });
-    if (!user) return next(new Error("In-valid token", { cause: 401 }));
+    const { user, decoded } =
+      (await decodeToken({
+        next,
+        authorization: req.headers.authorization,
+        tokenType,
+      })) || {};
+    if (!user) {
+      return;
+    }
     req.user = user;
-    const checkAuthorization = accessRoles.includes(user.role); 
+    req.decoded = decoded;
+
+    const checkAuthorization = accessRoles.includes(user.role);
     if (!checkAuthorization) {
       return next(new Error("Not authorized", { cause: 403 }));
     }

@@ -1,3 +1,5 @@
+import { UserModel } from "./models/user.model.js";
+
 export const findOne = async ({
   model,
   filter = {},
@@ -27,4 +29,21 @@ export const updateOne = async ({
   options = { runValidators: true },
 } = {}) => {
   return await model.updateOne(filter, data, options);
+};
+
+export const findOneAndUpdate = async ({
+  model,
+  filter = {},
+  data = {},
+  options = { runValidators: true, new: true },
+  select = "",
+  populate = [],
+} = {}) => {
+  return await model
+    .findOneAndUpdate(filter, { ...data, $inc: { __v: 1 } }, options)
+    .select(select)
+    .populate(populate);
+};
+export const deleteOne = async ({ model, filter = {} } = {}) => {
+  return await model.deleteOne(filter);
 };

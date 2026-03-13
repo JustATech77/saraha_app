@@ -1,11 +1,12 @@
 import Joi from "joi";
 import { Types } from "mongoose";
 import { asyncHandler } from "../utils/response/response.js";
-export const generalFields = {
-  fullName: Joi.string().pattern(
-    new RegExp(/^[A-Z][a-z]{1,19}\s{1}[A-Z][a-z]{1,19}/),
-  ),
+import { logoutEnum } from "../utils/security/token.js";
 
+export const generalFields = {
+  fullName: Joi.string(),
+  firstName: Joi.string(),
+  lastName: Joi.string(),
   email: Joi.string()
     .pattern(new RegExp(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/))
     .email({
@@ -23,6 +24,9 @@ export const generalFields = {
   gender: Joi.string().valid("male", "female").default(null),
   otp: Joi.string().pattern(new RegExp(/^\d{6}$/)),
   lang: Joi.string().valid("ar", "en"),
+  flag: Joi.string()
+    .valid(...Object.values(logoutEnum))
+    .default(logoutEnum.stayLoggedIn),
   userId: Joi.string().custom((value, helpers) => {
     if (!Types.ObjectId.isValid(value)) {
       return helpers.message("invalid mongoose id");

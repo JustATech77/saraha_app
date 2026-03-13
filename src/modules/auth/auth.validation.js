@@ -10,7 +10,7 @@ export const signup = {
       password: generalFields.password.required(),
       confirmPassword: generalFields.confirmPassword.required(),
       phone: generalFields.phone.required(),
-      gender: generalFields.gender.required(),
+      gender: generalFields.gender,
     })
     .required()
     .options({ allowUnknown: false }),
@@ -46,4 +46,27 @@ export const siginpWithgmail = {
     })
     .required()
     .options({ allowUnknown: false }),
+};
+
+export const forgetPassword = {
+  body: joi.object().keys({
+    email: generalFields.email.required(),
+  }),
+};
+
+export const virfyOTPresetPass = {
+  body: joi.object().keys({
+    email: generalFields.email.required(),
+    otp: generalFields.otp.required(),
+  }),
+};
+
+
+export const resetPassword = {
+  body: joi.object().keys({
+    email: generalFields.email.required(),
+    otp: generalFields.otp.required(),
+    newPassword: generalFields.password.required(),
+    confirmNewPassword: joi.string().valid(joi.ref("newPassword")).required(),
+  }),
 };

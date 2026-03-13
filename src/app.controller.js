@@ -1,13 +1,14 @@
 import path from "node:path";
 import * as dotenv from "dotenv";
-dotenv.config({ path: path.join("./src/config/.env.dev") });
+import { fileURLToPath } from "node:url";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "./config/.env.dev") });
 import express from "express";
 import connect from "./config/connection.db.js";
 import authRouter from "./modules/auth/auth.controller.js";
 import userRouter from "./modules/user/user.controller.js";
 import { globalErrorHandling } from "./utils/response/response.js";
 import cors from "cors";
-import { sendEmail } from "./utils/email/send.email.js";
 const bootstrap = async () => {
   try {
     const app = express();
@@ -25,7 +26,7 @@ const bootstrap = async () => {
     });
     // global error handling
     app.use(globalErrorHandling);
-   
+
     // start server
     app.listen(port, () => {
       console.log(`Server run on port ${port}`);

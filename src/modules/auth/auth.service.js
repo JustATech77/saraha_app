@@ -8,33 +8,25 @@ import {
 import { compareHash, generateHash } from "../../utils/security/hash.js";
 import { encrypt } from "../../utils/security/encryption.js";
 import { getLoginCred } from "../../utils/security/token.js";
-import { OAuth2Client } from "google-auth-library";
+import { LoginTicket, OAuth2Client } from "google-auth-library";
 import { emailEvent } from "../../utils/events/email.event.js";
 import { customAlphabet } from "nanoid";
 
 export const signup = asyncHandler(async (req, res, next) => {
-  
-  // extract data from request body
-  const { fullName, email, password,confirmPassword, gender, phone } = req.body;
-  // split full name into first name and last name
+  const { fullName, email, password, confirmPassword, gender, phone } =
+    req.body;
 
-  // check if email already exists
   if (await DBservice.findOne({ model: UserModel, filter: { email } })) {
     return next(new Error("Email Already Exist", { cause: 409 }));
   }
-  // generate hash password using bcrypt
-  const hashesPass = await generateHash({ plainText: password, saltRound: 12 });
+  const hashesPass = await generateHash({ plainText: password });
 
-  // encrypt phone
   const encPhone = await encrypt({
     plainText: phone,
-    secretKey: "SRAHA_APP_PHONE",
   });
-  // generate confirm email otp using nanoid
   const otp = customAlphabet("0123456789", 6)();
-  //
-  const confirmEmailOtp = await generateHash({ plainText: otp, saltRound: 12 });
-  // create new user
+
+  const confirmEmailOtp = await generateHash({ plainText: otp });
   const newUser = await DBservice.create({
     model: UserModel,
     data: [
@@ -48,13 +40,13 @@ export const signup = asyncHandler(async (req, res, next) => {
       },
     ],
   });
-  // send confirm email event
+
   emailEvent.emit("confirmEmail", {
     to: email,
     subject: "Confirm Email",
     otp: otp,
   });
-  // return response
+
   return successResponse({
     res,
     message: "User Created Successfully",
@@ -81,6 +73,13 @@ export const signin = asyncHandler(async (req, res, next) => {
   if (!user.confirmEmail) {
     return next(new Error("Email Not Confirmed", { cause: 400 }));
   }
+  if (user.deletedAt) {
+    return next(
+      new Error("Please contact support to restore your account", {
+        cause: 400,
+      }),
+    );
+  }
   if (!matchPass) {
     return next(new Error("Invalid Email or Password", { cause: 404 }));
   }
@@ -89,7 +88,7 @@ export const signin = asyncHandler(async (req, res, next) => {
   return successResponse({
     res,
     message: "Login Successfully",
-    data: { credntials },
+    data: credntials,
   });
 });
 
@@ -201,6 +200,114 @@ export const confirmEmailOTP = asyncHandler(async (req, res, next) => {
   return successResponse({
     res,
     message: "Email Confirmed Successfully",
+    data: updatedUser,
+  });
+});
+
+export const forgetPassword = asyncHandler(async (req, res, next) => {
+  const { email } = req.body;
+  const otp = customAlphabet("0123456789", 6)();
+  const forgetPassOTPhashed = await generateHash({ plainText: otp });
+  const storeOTP = await DBservice.findOneAndUpdate({
+    model: UserModel,
+    filter: {
+      email: email,
+      confirmEmail: true,
+      provider: providerenum.system,
+      deletedAt: { $exists: false },
+    },
+    data: {
+      forgetPassOTP: forgetPassOTPhashed,
+    },
+  });
+
+  if (!storeOTP) {
+    return next(new Error("Failed to send OTP"));
+  }
+  emailEvent.emit("reset password", {
+    to: email,
+    subject: "Forget Password",
+    otp: otp,
+  });
+  return successResponse({
+    res,
+    message: "OTP sent successfully",
+    data: { email },
+  });
+});
+
+export const viryfyOTPresetPass = asyncHandler(async (req, res, next) => {
+  const { email, otp } = req.body;
+  const user = await DBservice.findOne({
+    model: UserModel,
+    filter: {
+      email,
+      confirmEmail: true,
+      provider: providerenum.system,
+      deletedAt: { $exists: false },
+      forgetPassOTP: { $exists: true },
+    },
+  });
+  if (!user) {
+    return next(new Error("In-valid Account"));
+  }
+  const matchOTP = await compareHash({
+    plainText: otp,
+    hashedPassword: user.forgetPassOTP,
+  });
+
+  if (!matchOTP) {
+    return next(new Error("In-valid OTP"));
+  }
+  return successResponse({
+    res,
+    message: "OTP verified successfully",
+    data: { email },
+  });
+});
+
+export const resetPassword = asyncHandler(async (req, res, next) => {
+  const { email, newPassword, otp } = req.body;
+
+  const user = await DBservice.findOne({
+    model: UserModel,
+    filter: {
+      email,
+      confirmEmail: true,
+      provider: providerenum.system,
+      deletedAt: { $exists: false },
+      forgetPassOTP: { $exists: true },
+    },
+  });
+
+  if (!user) {
+    return next(new Error("In-valid Account"));
+  }
+
+  const matchOTP = await compareHash({
+    plainText: otp,
+    hashedPassword: user.forgetPassOTP,
+  });
+
+  if (!matchOTP) {
+    return next(new Error("In-valid OTP"));
+  }
+  const updatedUser = await DBservice.updateOne({
+    model: UserModel,
+    filter: { email },
+    data: {
+      password: await generateHash({ plainText: newPassword }),
+      changeCredentialsTime: new Date(),
+      $unset: { forgetPassOTP: true },
+      $inc: { __v: 1 },
+    },
+  });
+  if (!updatedUser) {
+    return next(new Error("Failed to reset password"));
+  }
+  return successResponse({
+    res,
+    message: "Password reset successfully",
     data: updatedUser,
   });
 });

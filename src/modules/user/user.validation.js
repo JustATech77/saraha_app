@@ -6,3 +6,48 @@ export const shareProfile = {
     userId: generalFields.userId.required(),
   }),
 };
+
+export const updateBasicInfo = {
+  body: joi
+    .object()
+    .keys({
+      firstName: generalFields.firstName,
+      lastName: generalFields.lastName,
+      phone: generalFields.phone,
+      gender: generalFields.gender,
+    })
+    .required(),
+};
+
+export const frezzAccount = {
+  params: joi.object().keys({
+    userId: generalFields.userId,
+  }),
+};
+
+export const restoreAccount = {
+  params: joi.object().keys({
+    userId: generalFields.userId.required(),
+  }),
+};
+
+export const deleteAccount = {
+  params: joi.object().keys({
+    userId: generalFields.userId.required(),
+  }),
+};
+
+export const updatePassword = {
+  body: joi.object().keys({
+    oldPassword: generalFields.password.required(),
+    newPassword: generalFields.password.not(joi.ref("oldPassword")).required(),
+    confirmNewPassword: joi.string().valid(joi.ref("newPassword")).required(),
+    flag: generalFields.flag,
+  }),
+};
+
+export const logout = {
+  body: joi.object().keys({
+    flag: generalFields.flag,
+  }),
+};
