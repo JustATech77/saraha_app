@@ -48,6 +48,9 @@ const userSchema = new mongoose.Schema(
     picture: {
       type: String,
     },
+    coverImages: {
+      type: [String],
+    },
     provider: {
       type: String,
       enum: Object.values(providerenum),
@@ -64,6 +67,7 @@ const userSchema = new mongoose.Schema(
     restoredAt: { type: Date },
     restoredBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     forgetPassOTP: { type: String },
+
     changeCredentialsTime: { type: Date },
   },
 

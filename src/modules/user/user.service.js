@@ -237,3 +237,37 @@ export const updatePassword = asyncHandler(async (req, res, next) => {
     message: "Password updated successfully",
   });
 });
+
+export const profileImage = asyncHandler(async (req, res, next) => {
+  const user = await DBservice.findOneAndUpdate({
+    model: UserModel,
+    filter: {
+      _id: req.user._id,
+    },
+    data: {
+      picture: req.file.finalPath,
+    },
+  });
+  return successResponse({
+    res,
+    data: { file: req.file },
+    message: "Profile image updated successfully",
+  });
+});
+
+export const coverImage = asyncHandler(async (req, res, next) => {
+  const user = await DBservice.findOneAndUpdate({
+    model: UserModel,
+    filter: {
+      _id: req.user._id,
+    },
+    data: {
+      coverImages: req.files.map((file) => file.finalPath),
+    },
+  });
+  return successResponse({
+    res,
+    data: user,
+    message: "Cover image updated successfully",
+  });
+});

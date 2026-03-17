@@ -65,14 +65,6 @@ export const signin = asyncHandler(async (req, res, next) => {
   if (!user) {
     return next(new Error("Invalid Email or Password", { cause: 404 }));
   }
-
-  const matchPass = await compareHash({
-    plainText: password,
-    hashedPassword: user.password,
-  });
-  if (!user.confirmEmail) {
-    return next(new Error("Email Not Confirmed", { cause: 400 }));
-  }
   if (user.deletedAt) {
     return next(
       new Error("Please contact support to restore your account", {
@@ -80,6 +72,14 @@ export const signin = asyncHandler(async (req, res, next) => {
       }),
     );
   }
+  const matchPass = await compareHash({
+    plainText: password,
+    hashedPassword: user.password,
+  });
+  if (!user.confirmEmail) {
+    return next(new Error("Email Not Confirmed", { cause: 400 }));
+  }
+
   if (!matchPass) {
     return next(new Error("Invalid Email or Password", { cause: 404 }));
   }

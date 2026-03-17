@@ -9,12 +9,14 @@ import authRouter from "./modules/auth/auth.controller.js";
 import userRouter from "./modules/user/user.controller.js";
 import { globalErrorHandling } from "./utils/response/response.js";
 import cors from "cors";
+
 const bootstrap = async () => {
   try {
     const app = express();
     const port = process.env.PORT;
     // connect to database
     await connect();
+    app.use("/uploads", express.static(path.resolve("./src/uploads")));
     app.use(express.json()); // parse json body
     app.use(cors()); // cors
     // routes

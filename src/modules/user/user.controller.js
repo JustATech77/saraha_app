@@ -5,6 +5,10 @@ import * as autMiddleware from "../../middleware/authentication.js";
 import { tokenTypeEnum } from "../../utils/security/token.js";
 import { endPoint } from "./user.authorization.js";
 import { validation } from "../../middleware/validation.js";
+import {
+  fileValidation,
+  localfileUpload,
+} from "../../utils/multer/local.multer.js";
 
 const userRouter = Router();
 
@@ -69,6 +73,28 @@ userRouter.patch(
   autMiddleware.authentication(),
   validation(validators.updatePassword),
   userService.updatePassword,
+);
+
+userRouter.patch(
+  "/profile-image",
+  autMiddleware.authentication(),
+  localfileUpload({
+    customPath: "User",
+    validation: fileValidation.image,
+  }).single("image"),
+  validation(validators.updateProfileImage),
+  userService.profileImage,
+);
+
+userRouter.patch(
+  "/profile-cover-images",
+  autMiddleware.authentication(),
+  localfileUpload({
+    customPath: "User",
+    validation: fileValidation.image,
+  }).array("images", 3),
+  validation(validators.updateCoverImage),
+  userService.coverImage,
 );
 
 export default userRouter;

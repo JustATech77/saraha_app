@@ -2,6 +2,7 @@ import Joi from "joi";
 import { Types } from "mongoose";
 import { asyncHandler } from "../utils/response/response.js";
 import { logoutEnum } from "../utils/security/token.js";
+import { fileValidation } from "../utils/multer/local.multer.js";
 
 export const generalFields = {
   fullName: Joi.string(),
@@ -33,11 +34,25 @@ export const generalFields = {
     }
     return value;
   }),
+
+  file: Joi.object().keys({
+    fieldname: Joi.string().required(),
+    originalname: Joi.string().required(),
+    encoding: Joi.string().required(),
+    destination: Joi.string().required(),
+    filename: Joi.string().required(),
+    finalPath: Joi.string().required(),
+    path: Joi.string().required(),
+    size: Joi.number().positive().required(),
+    mimetype: Joi.string().valid(...Object.values(fileValidation.image)),
+  }),
 };
 
 export const validation = (schema) => {
   return asyncHandler(async (req, res, next) => {
     const validationError = [];
+
+    // console.log(req.file);
 
     for (const key of Object.keys(schema)) {
       const validateDataResult = schema[key].validate(req[key], {
